@@ -73,11 +73,15 @@
     </div>
 
     <button id="btnAgregar" style="background: #22303F; color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; width: 100%;">Agregar al catálogo</button>
+    <button id="btnCancelarEdicion" style="display:none; background: white; border: 1px solid #D6CDB6; border-radius: 6px; padding: 8px 18px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px;">Cancelar edición</button>
     <div id="addMsg" style="font-size: 13px; margin-top: 8px; min-height: 16px;"></div>
   </div>
 
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
     <input id="filtro" type="text" placeholder="Buscar en el catálogo..." style="flex: 1; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 13px;" />
+    <select id="catFiltro" style="padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 13px;">
+      <option value="">Todas las categorías</option>
+    </select>
     <button id="btnRefrescar" style="background: white; border: 1px solid #D6CDB6; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; white-space: nowrap;">Actualizar</button>
     <button id="btnExport" style="background: white; border: 1px solid #D6CDB6; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; white-space: nowrap;">Descargar CSV</button>
   </div>
@@ -128,12 +132,20 @@
   const LANG_MAP = { es: "Español", en: "Inglés", spa: "Español", eng: "Inglés" };
 
   const catSelect = document.getElementById("categoria");
+  const catFiltro = document.getElementById("catFiltro");
   CATEGORIES.forEach(c => {
     const opt = document.createElement("option");
     opt.value = c.code;
     opt.textContent = c.label + " (" + c.code + ")";
     catSelect.appendChild(opt);
+
+    const opt2 = document.createElement("option");
+    opt2.value = c.code;
+    opt2.textContent = c.label + " (" + c.code + ")";
+    catFiltro.appendChild(opt2);
   });
+
+  let editingCode = null;
 
   let books = [];
 
@@ -261,6 +273,41 @@
     }
   });
 
+  function startEdit(code) {
+    const b = books.find(x => x.code === code);
+    if (!b) return;
+    editingCode = code;
+    document.getElementById("isbn").value = "";
+    document.getElementById("titulo").value = b.titulo || "";
+    document.getElementById("autor").value = b.autor || "";
+    document.getElementById("editorial").value = b.editorial || "";
+    document.getElementById("anio").value = b.anio || "";
+    document.getElementById("idioma").value = b.idioma || "Español";
+    catSelect.value = b.categoria;
+    document.getElementById("formato").value = b.formato;
+    document.getElementById("archivoDigital").value = b.archivoDigital || "";
+    document.getElementById("btnAgregar").textContent = "Guardar cambios (" + code + ")";
+    document.getElementById("btnCancelarEdicion").style.display = "block";
+    document.getElementById("addMsg").textContent = "Editando " + code + ". El código no cambia.";
+    document.getElementById("addMsg").style.color = "#6B6459";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    editingCode = null;
+    document.getElementById("titulo").value = "";
+    document.getElementById("autor").value = "";
+    document.getElementById("editorial").value = "";
+    document.getElementById("anio").value = "";
+    document.getElementById("idioma").value = "Español";
+    document.getElementById("isbn").value = "";
+    document.getElementById("archivoDigital").value = "";
+    document.getElementById("btnAgregar").textContent = "Agregar al catálogo";
+    document.getElementById("btnCancelarEdicion").style.display = "none";
+    document.getElementById("addMsg").textContent = "";
+  }
+  document.getElementById("btnCancelarEdicion").addEventListener("click", cancelEdit);
+
   document.getElementById("btnAgregar").addEventListener("click", async () => {
     const titulo = document.getElementById("titulo").value.trim();
     const autor = document.getElementById("autor").value.trim();
@@ -288,13 +335,15 @@
     const today = new Date().toISOString().slice(0, 10);
 
     try {
-      const res = await apiPost({
-        action: "add", titulo, autor, editorial, anio, idioma, categoria, formato, isbn, fecha: today, archivoDigital,
-        password: document.getElementById("adminPass").value
-      });
+      const payload = editingCode
+        ? { action: "editar", code: editingCode, titulo, autor, editorial, anio, idioma, categoria, formato, isbn, archivoDigital, password: document.getElementById("adminPass").value }
+        : { action: "add", titulo, autor, editorial, anio, idioma, categoria, formato, isbn, fecha: today, archivoDigital, password: document.getElementById("adminPass").value };
+      const res = await apiPost(payload);
       if (res.success) {
-        addMsg.textContent = "Agregado como " + res.code + ".";
+        addMsg.textContent = editingCode ? ("Cambios guardados en " + editingCode + ".") : ("Agregado como " + res.code + ".");
         addMsg.style.color = "#3B6D11";
+        const wasEditing = !!editingCode;
+        editingCode = null;
         document.getElementById("titulo").value = "";
         document.getElementById("autor").value = "";
         document.getElementById("editorial").value = "";
@@ -303,9 +352,13 @@
         document.getElementById("isbn").value = "";
         document.getElementById("archivoDigital").value = "";
         document.getElementById("lookupMsg").textContent = "";
+        if (wasEditing) {
+          document.getElementById("btnAgregar").textContent = "Agregar al catálogo";
+          document.getElementById("btnCancelarEdicion").style.display = "none";
+        }
         await loadBooks();
       } else {
-        addMsg.textContent = "Error al guardar: " + (res.error || "desconocido");
+        addMsg.textContent = "Error: " + (res.error || "desconocido");
         addMsg.style.color = "#A32D2D";
       }
     } catch (e) {
@@ -315,6 +368,7 @@
   });
 
   document.getElementById("filtro").addEventListener("input", render);
+  document.getElementById("catFiltro").addEventListener("change", render);
   document.getElementById("btnRefrescar").addEventListener("click", loadBooks);
 
   document.getElementById("btnExport").addEventListener("click", () => {
@@ -373,11 +427,14 @@
 
   function render() {
     const filtro = (document.getElementById("filtro").value || "").toLowerCase();
+    const catSel = catFiltro.value;
     const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
-    const filtered = books.filter(b =>
-      !filtro || ((b.titulo || "") + " " + (b.autor || "") + " " + (b.code || "")).toLowerCase().indexOf(filtro) !== -1
-    );
+    const filtered = books.filter(b => {
+      const matchesText = !filtro || ((b.titulo || "") + " " + (b.autor || "") + " " + (b.code || "")).toLowerCase().indexOf(filtro) !== -1;
+      const matchesCat = !catSel || b.categoria === catSel;
+      return matchesText && matchesCat;
+    });
 
     document.getElementById("emptyMsg").style.display = books.length === 0 ? "block" : "none";
     document.getElementById("tableWrap").style.display = books.length === 0 ? "none" : "block";
@@ -403,10 +460,13 @@
         '<td style="padding: 7px 10px;">' + escapeHtml(b.idioma || "") + '</td>' +
         '<td style="padding: 7px 10px;">' + formatoCell + '</td>' +
         '<td style="padding: 7px 10px;"><span style="color:' + estadoColor + '; cursor:pointer;" data-toggle="' + escapeHtml(b.code) + '">' + escapeHtml(b.estado) + (b.prestadoA ? " (" + escapeHtml(b.prestadoA) + ")" : "") + '</span></td>' +
-        '<td style="padding: 7px 10px; text-align: right;"><span style="cursor:pointer; color:#A39B87;" data-delete="' + escapeHtml(b.code) + '">eliminar</span></td>';
+        '<td style="padding: 7px 10px; text-align: right; white-space:nowrap;"><span style="cursor:pointer; color:#22303F; margin-right:10px;" data-editar="' + escapeHtml(b.code) + '">editar</span><span style="cursor:pointer; color:#A39B87;" data-delete="' + escapeHtml(b.code) + '">eliminar</span></td>';
       tbody.appendChild(tr);
     });
 
+    tbody.querySelectorAll("[data-editar]").forEach(el => {
+      el.addEventListener("click", () => startEdit(el.getAttribute("data-editar")));
+    });
     tbody.querySelectorAll("[data-toggle]").forEach(el => {
       el.addEventListener("click", () => toggleEstado(el.getAttribute("data-toggle")));
     });
