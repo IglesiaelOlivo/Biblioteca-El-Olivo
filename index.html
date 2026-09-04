@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca de la Iglesia — Consulta</title>
+</head>
+<body style="margin:0; padding:20px; background:#FAF7F0;">
+<div id="app" style="max-width: 900px; margin: 0 auto; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: #22303F;">
+
+  <div style="text-align:center; margin-bottom: 20px;">
+    <h1 style="font-family: Georgia, 'Iowan Old Style', serif; font-size: 24px; margin: 0 0 4px; color: #22303F;">Biblioteca de la Iglesia</h1>
+    <p style="font-size: 13px; color: #6B6459; margin: 0;">Consulta los libros disponibles. Si quieres uno físico, puedes reservarlo.</p>
+  </div>
+
+  <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+    <input id="filtro" type="text" placeholder="Buscar por título, autor o código..." style="flex: 1; padding: 10px 12px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+    <select id="catFiltro" style="padding: 10px 12px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;">
+      <option value="">Todas las categorías</option>
+    </select>
+  </div>
+
+  <div id="statusMsg" style="font-size: 12px; color: #6B6459; margin-bottom: 14px; text-align:center;"></div>
+
+  <div id="cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;"></div>
+  <p id="emptyMsg" style="font-size: 13px; color: #6B6459; text-align: center; padding: 30px; display: none;">No se encontraron libros con esa búsqueda.</p>
+</div>
+
+<div id="reservaModal" style="display:none; position:fixed; inset:0; background:rgba(34,48,63,0.55); align-items:center; justify-content:center; padding:16px; z-index:50;">
+  <div style="background:white; border-radius:10px; padding:22px; max-width:380px; width:100%;">
+    <h3 id="reservaTitulo" style="font-family: Georgia, serif; font-size:17px; margin:0 0 12px;"></h3>
+    <label style="font-size:12px; color:#6B6459; display:block; margin-bottom:3px;">Tu nombre</label>
+    <input id="reservaNombre" type="text" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #D6CDB6; border-radius:6px; font-size:14px; margin-bottom:10px;" />
+    <label style="font-size:12px; color:#6B6459; display:block; margin-bottom:3px;">Teléfono o correo de contacto</label>
+    <input id="reservaContacto" type="text" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #D6CDB6; border-radius:6px; font-size:14px; margin-bottom:10px;" />
+    <label style="font-size:12px; color:#6B6459; display:block; margin-bottom:3px;">Nota (opcional)</label>
+    <input id="reservaNotas" type="text" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #D6CDB6; border-radius:6px; font-size:14px; margin-bottom:14px;" />
+    <div id="reservaMsg" style="font-size:13px; min-height:16px; margin-bottom:8px;"></div>
+    <div style="display:flex; gap:8px;">
+      <button id="btnCancelarReserva" style="flex:1; background:white; border:1px solid #D6CDB6; border-radius:6px; padding:9px; font-size:14px; cursor:pointer;">Cancelar</button>
+      <button id="btnConfirmarReserva" style="flex:1; background:#7A2E2E; color:white; border:none; border-radius:6px; padding:9px; font-size:14px; cursor:pointer;">Reservar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const API_URL = "https://script.google.com/macros/s/AKfycbwz5ou6q3wJEZQIKGUBRJEVURzlaUsuewCHtd4-Zf-oiW7eazw6dWMeUvOof4dCX5xZ/exec";
+
+  const CATEGORIES = [
+    { code: "BIB", label: "Biblia y estudios bíblicos" },
+    { code: "TEO", label: "Teología" },
+    { code: "VID", label: "Vida cristiana" },
+    { code: "FAM", label: "Familia y relaciones" },
+    { code: "MIN", label: "Ministerio y liderazgo" },
+    { code: "HIS", label: "Historia de la iglesia y biografías" },
+    { code: "CON", label: "Consejería" },
+    { code: "INF", label: "Niños y jóvenes" },
+    { code: "MUS", label: "Música y adoración" },
+    { code: "FIC", label: "Ficción cristiana" },
+    { code: "MAY", label: "Mayordomía y finanzas" },
+    { code: "REF", label: "Referencia general" },
+    { code: "GEN", label: "General" }
+  ];
+
+  const catFiltro = document.getElementById("catFiltro");
+  CATEGORIES.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.code;
+    opt.textContent = c.label;
+    catFiltro.appendChild(opt);
+  });
+
+  let books = [];
+  let reservaCode = null;
+  let reservaTitulo = null;
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById("statusMsg");
+    el.textContent = msg;
+    el.style.color = isError ? "#A32D2D" : "#6B6459";
+  }
+
+  async function loadBooks() {
+    setStatus("Cargando catálogo...");
+    try {
+      const resp = await fetch(API_URL);
+      const data = await resp.json();
+      books = data.books || [];
+      setStatus("");
+      render();
+    } catch (e) {
+      setStatus("No se pudo cargar el catálogo. Intenta de nuevo en un momento.", true);
+    }
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s || "";
+    return d.innerHTML;
+  }
+
+  function render() {
+    const filtro = (document.getElementById("filtro").value || "").toLowerCase();
+    const catSel = catFiltro.value;
+    const cards = document.getElementById("cards");
+    cards.innerHTML = "";
+
+    const filtered = books.filter(b => {
+      const matchesText = !filtro || ((b.titulo || "") + " " + (b.autor || "") + " " + (b.code || "")).toLowerCase().indexOf(filtro) !== -1;
+      const matchesCat = !catSel || b.categoria === catSel;
+      return matchesText && matchesCat;
+    });
+
+    document.getElementById("emptyMsg").style.display = filtered.length === 0 ? "block" : "none";
+
+    filtered.forEach(b => {
+      const catLabel = (CATEGORIES.find(c => c.code === b.categoria) || {}).label || b.categoria;
+      const disponible = b.estado === "Disponible";
+      const estadoColor = disponible ? "#3B6D11" : "#A32D2D";
+
+      let actionHtml = "";
+      if (b.formato === "Digital" && b.archivoDigital) {
+        actionHtml = '<a href="' + escapeHtml(b.archivoDigital) + '" target="_blank" rel="noopener" style="display:block; text-align:center; background:#22303F; color:white; text-decoration:none; padding:9px; border-radius:6px; font-size:13px; margin-top:10px;">Descargar</a>';
+      } else if (b.formato === "Digital") {
+        actionHtml = '<div style="text-align:center; color:#A39B87; font-size:12px; margin-top:10px;">Archivo aún no disponible en línea</div>';
+      } else if (b.formato === "Físico" && disponible) {
+        actionHtml = '<button data-reservar="' + escapeHtml(b.code) + '" data-titulo="' + escapeHtml(b.titulo) + '" style="display:block; width:100%; background:#7A2E2E; color:white; border:none; padding:9px; border-radius:6px; font-size:13px; margin-top:10px; cursor:pointer;">Reservar</button>';
+      } else {
+        actionHtml = '<div style="text-align:center; color:#A39B87; font-size:12px; margin-top:10px;">No disponible en este momento</div>';
+      }
+
+      const card = document.createElement("div");
+      card.style.cssText = "background:white; border:1px solid #E4DCC9; border-radius:10px; padding:16px;";
+      card.innerHTML =
+        '<div style="font-size:11px; color:#B08D57; font-weight:600; letter-spacing:0.03em; margin-bottom:4px;">' + escapeHtml(catLabel).toUpperCase() + '</div>' +
+        '<div style="font-family: Georgia, serif; font-size:15px; font-weight:700; margin-bottom:2px;">' + escapeHtml(b.titulo) + '</div>' +
+        '<div style="font-size:13px; color:#6B6459; margin-bottom:8px;">' + escapeHtml(b.autor) + '</div>' +
+        '<div style="font-size:12px; color:#6B6459;">' + escapeHtml(b.formato) + (b.idioma ? " · " + escapeHtml(b.idioma) : "") + '</div>' +
+        '<div style="font-size:12px; color:' + estadoColor + '; font-weight:600; margin-top:4px;">' + escapeHtml(b.estado) + '</div>' +
+        actionHtml;
+      cards.appendChild(card);
+    });
+
+    cards.querySelectorAll("[data-reservar]").forEach(btn => {
+      btn.addEventListener("click", () => openReserva(btn.getAttribute("data-reservar"), btn.getAttribute("data-titulo")));
+    });
+  }
+
+  function openReserva(code, titulo) {
+    reservaCode = code;
+    reservaTitulo = titulo;
+    document.getElementById("reservaTitulo").textContent = "Reservar: " + titulo;
+    document.getElementById("reservaNombre").value = "";
+    document.getElementById("reservaContacto").value = "";
+    document.getElementById("reservaNotas").value = "";
+    document.getElementById("reservaMsg").textContent = "";
+    document.getElementById("reservaModal").style.display = "flex";
+  }
+
+  document.getElementById("btnCancelarReserva").addEventListener("click", () => {
+    document.getElementById("reservaModal").style.display = "none";
+  });
+
+  document.getElementById("btnConfirmarReserva").addEventListener("click", async () => {
+    const nombre = document.getElementById("reservaNombre").value.trim();
+    const contacto = document.getElementById("reservaContacto").value.trim();
+    const notas = document.getElementById("reservaNotas").value.trim();
+    const msg = document.getElementById("reservaMsg");
+
+    if (!nombre || !contacto) {
+      msg.textContent = "Por favor completa tu nombre y contacto.";
+      msg.style.color = "#A32D2D";
+      return;
+    }
+    msg.textContent = "Enviando...";
+    msg.style.color = "#6B6459";
+    try {
+      const resp = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "reservar", code: reservaCode, titulo: reservaTitulo, nombre, contacto, notas })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        msg.textContent = "¡Listo! Te avisarán pronto.";
+        msg.style.color = "#3B6D11";
+        setTimeout(() => { document.getElementById("reservaModal").style.display = "none"; }, 1400);
+      } else {
+        msg.textContent = "No se pudo enviar la reserva. Intenta de nuevo.";
+        msg.style.color = "#A32D2D";
+      }
+    } catch (e) {
+      msg.textContent = "No se pudo enviar. Revisa tu conexión.";
+      msg.style.color = "#A32D2D";
+    }
+  });
+
+  document.getElementById("filtro").addEventListener("input", render);
+  catFiltro.addEventListener("change", render);
+
+  loadBooks();
+})();
+</script>
+</body>
+</html>

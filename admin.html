@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo Biblioteca de la Iglesia</title>
+</head>
+<body style="margin:0; padding:20px; background:#FAF7F0;">
+<div id="app" style="max-width: 900px; margin: 0 auto; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: #22303F;">
+
+  <div style="background: #FDF4E3; border: 1px solid #E8CFA0; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px;">
+    <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 4px;">Contraseña de administrador (necesaria para agregar, prestar o eliminar libros)</label>
+    <input id="adminPass" type="password" placeholder="••••••••" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+  </div>
+
+  <div style="background: #F6F1E7; border: 1px solid #E4DCC9; border-radius: 10px; padding: 20px 24px; margin-bottom: 18px;">
+    <h2 style="font-family: Georgia, 'Iowan Old Style', serif; font-size: 19px; font-weight: 700; margin: 0 0 4px; color: #22303F;">Agregar libro</h2>
+    <p style="font-size: 13px; color: #6B6459; margin: 0 0 16px;">Escribe el ISBN y busca. Si no lo encuentra, completa los campos a mano.</p>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+      <input id="isbn" type="text" placeholder="ISBN (ej. 9780829751463)" style="flex: 1; padding: 9px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+      <button id="btnBuscar" style="background: #7A2E2E; color: white; border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; cursor: pointer;">Buscar</button>
+    </div>
+    <div id="lookupMsg" style="font-size: 13px; margin-bottom: 12px; min-height: 16px;"></div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Título</label>
+        <input id="titulo" type="text" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+      </div>
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Autor</label>
+        <input id="autor" type="text" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Editorial</label>
+        <input id="editorial" type="text" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+      </div>
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Año</label>
+        <input id="anio" type="text" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+      </div>
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Idioma</label>
+        <select id="idioma" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;">
+          <option value="Español">Español</option>
+          <option value="Inglés">Inglés</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Categoría</label>
+        <select id="categoria" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;"></select>
+      </div>
+      <div>
+        <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Formato</label>
+        <select id="formato" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;">
+          <option value="Físico">Físico</option>
+          <option value="Digital">Digital</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <label style="font-size: 12px; color: #6B6459; display: block; margin-bottom: 3px;">Enlace del archivo digital (solo si es Digital — pega aquí el link de Drive)</label>
+      <input id="archivoDigital" type="text" placeholder="https://drive.google.com/..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
+    </div>
+
+    <button id="btnAgregar" style="background: #22303F; color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; width: 100%;">Agregar al catálogo</button>
+    <div id="addMsg" style="font-size: 13px; margin-top: 8px; min-height: 16px;"></div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
+    <input id="filtro" type="text" placeholder="Buscar en el catálogo..." style="flex: 1; padding: 8px 10px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 13px;" />
+    <button id="btnRefrescar" style="background: white; border: 1px solid #D6CDB6; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; white-space: nowrap;">Actualizar</button>
+    <button id="btnExport" style="background: white; border: 1px solid #D6CDB6; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; white-space: nowrap;">Descargar CSV</button>
+  </div>
+
+  <div id="statusMsg" style="font-size: 12px; color: #6B6459; margin-bottom: 8px; min-height: 16px;"></div>
+
+  <div id="tableWrap" style="overflow-x: auto; border: 1px solid #E4DCC9; border-radius: 8px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="background: #22303F; color: white;">
+          <th style="padding: 8px 10px; text-align: left;">Código</th>
+          <th style="padding: 8px 10px; text-align: left;">Título</th>
+          <th style="padding: 8px 10px; text-align: left;">Autor</th>
+          <th style="padding: 8px 10px; text-align: left;">Categoría</th>
+          <th style="padding: 8px 10px; text-align: left;">Idioma</th>
+          <th style="padding: 8px 10px; text-align: left;">Formato</th>
+          <th style="padding: 8px 10px; text-align: left;">Estado</th>
+          <th style="padding: 8px 10px; text-align: left;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <p id="emptyMsg" style="font-size: 13px; color: #6B6459; text-align: center; padding: 20px; display: none;">Aún no hay libros en el catálogo.</p>
+  <p style="font-size: 11px; color: #A39B87; margin-top: 10px;">Conectado a la hoja de Google Sheets de la iglesia — los datos viven ahí, no en este archivo.</p>
+</div>
+
+<script>
+(function () {
+  const API_URL = "https://script.google.com/macros/s/AKfycbwz5ou6q3wJEZQIKGUBRJEVURzlaUsuewCHtd4-Zf-oiW7eazw6dWMeUvOof4dCX5xZ/exec";
+
+  const CATEGORIES = [
+    { code: "BIB", label: "Biblia y estudios bíblicos", keywords: ["bible", "biblical", "scripture", "exegesis", "old testament", "new testament"] },
+    { code: "TEO", label: "Teología", keywords: ["theology", "doctrine", "apologetics", "systematic theology"] },
+    { code: "VID", label: "Vida cristiana", keywords: ["devotional", "spiritual life", "prayer", "christian living", "discipleship"] },
+    { code: "FAM", label: "Familia y relaciones", keywords: ["family", "marriage", "parenting", "relationships"] },
+    { code: "MIN", label: "Ministerio y liderazgo", keywords: ["ministry", "leadership", "missions", "evangelism", "pastoral"] },
+    { code: "HIS", label: "Historia de la iglesia y biografías", keywords: ["church history", "biography", "saints"] },
+    { code: "CON", label: "Consejería", keywords: ["counseling", "psychology", "mental health", "emotional"] },
+    { code: "INF", label: "Niños y jóvenes", keywords: ["juvenile", "children", "youth", "sunday school"] },
+    { code: "MUS", label: "Música y adoración", keywords: ["music", "hymns", "worship songs"] },
+    { code: "FIC", label: "Ficción cristiana", keywords: ["fiction", "novel"] },
+    { code: "MAY", label: "Mayordomía y finanzas", keywords: ["stewardship", "personal finance", "money management", "financial planning", "finance"] },
+    { code: "REF", label: "Referencia general", keywords: ["dictionary", "encyclopedia", "reference"] },
+    { code: "GEN", label: "General", keywords: [] }
+  ];
+
+  const LANG_MAP = { es: "Español", en: "Inglés", spa: "Español", eng: "Inglés" };
+
+  const catSelect = document.getElementById("categoria");
+  CATEGORIES.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.code;
+    opt.textContent = c.label + " (" + c.code + ")";
+    catSelect.appendChild(opt);
+  });
+
+  let books = [];
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById("statusMsg");
+    el.textContent = msg;
+    el.style.color = isError ? "#A32D2D" : "#6B6459";
+  }
+
+  async function apiGet() {
+    const resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    return resp.json();
+  }
+
+  async function apiPost(payload) {
+    const resp = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    return resp.json();
+  }
+
+  async function loadBooks() {
+    setStatus("Cargando catálogo desde Google Sheets...");
+    try {
+      const data = await apiGet();
+      books = data.books || [];
+      setStatus("Catálogo actualizado (" + books.length + " libros).");
+      render();
+    } catch (e) {
+      setStatus("No se pudo conectar con la hoja de Google. Revisa tu conexión o la URL del script.", true);
+    }
+  }
+
+  function guessCategory(subjects) {
+    if (!subjects || !subjects.length) return "GEN";
+    const text = subjects.join(" ").toLowerCase();
+    for (const cat of CATEGORIES) {
+      for (const kw of cat.keywords) {
+        if (text.indexOf(kw) !== -1) return cat.code;
+      }
+    }
+    return "GEN";
+  }
+
+  function extractYear(str) {
+    if (!str) return "";
+    const m = String(str).match(/\d{4}/);
+    return m ? m[0] : "";
+  }
+
+  async function tryOpenLibrary(isbn) {
+    const url = "https://openlibrary.org/api/books?bibkeys=ISBN:" + encodeURIComponent(isbn) + "&jscmd=data&format=json";
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const key = "ISBN:" + isbn;
+    if (!data[key]) return null;
+    const book = data[key];
+    return {
+      titulo: book.title || "",
+      autor: (book.authors || []).map(a => a.name).join(", "),
+      editorial: (book.publishers || []).map(p => p.name).join(", "),
+      anio: extractYear(book.publish_date),
+      idioma: "",
+      subjects: (book.subjects || []).map(s => s.name),
+      fuente: "Open Library"
+    };
+  }
+
+  async function tryGoogleBooks(isbn) {
+    const url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + encodeURIComponent(isbn);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!data.items || !data.items.length) return null;
+    const info = data.items[0].volumeInfo || {};
+    return {
+      titulo: info.title || "",
+      autor: (info.authors || []).join(", "),
+      editorial: info.publisher || "",
+      anio: extractYear(info.publishedDate),
+      idioma: LANG_MAP[info.language] || "",
+      subjects: info.categories || [],
+      fuente: "Google Books"
+    };
+  }
+
+  document.getElementById("btnBuscar").addEventListener("click", async () => {
+    const isbnRaw = document.getElementById("isbn").value.trim();
+    const isbn = isbnRaw.replace(/[^0-9Xx]/g, "");
+    const msg = document.getElementById("lookupMsg");
+    if (!isbn) {
+      msg.textContent = "Escribe un ISBN primero.";
+      msg.style.color = "#A32D2D";
+      return;
+    }
+    msg.textContent = "Buscando en Open Library...";
+    msg.style.color = "#6B6459";
+    let result = null;
+    try {
+      result = await tryOpenLibrary(isbn);
+    } catch (e) { result = null; }
+
+    if (!result) {
+      msg.textContent = "No estaba en Open Library, probando Google Books...";
+      try {
+        result = await tryGoogleBooks(isbn);
+      } catch (e) { result = null; }
+    }
+
+    if (result) {
+      document.getElementById("titulo").value = result.titulo;
+      document.getElementById("autor").value = result.autor;
+      document.getElementById("editorial").value = result.editorial;
+      document.getElementById("anio").value = result.anio;
+      if (result.idioma) document.getElementById("idioma").value = result.idioma;
+      catSelect.value = guessCategory(result.subjects);
+      msg.textContent = "Encontrado en " + result.fuente + ". Revisa los campos y ajusta lo que haga falta.";
+      msg.style.color = "#3B6D11";
+    } else {
+      msg.textContent = "No se encontró en ninguna de las dos fuentes (frecuente en editoriales cristianas pequeñas). Completa los datos a mano.";
+      msg.style.color = "#A32D2D";
+    }
+  });
+
+  document.getElementById("btnAgregar").addEventListener("click", async () => {
+    const titulo = document.getElementById("titulo").value.trim();
+    const autor = document.getElementById("autor").value.trim();
+    const editorial = document.getElementById("editorial").value.trim();
+    const anio = document.getElementById("anio").value.trim();
+    const idioma = document.getElementById("idioma").value;
+    const categoria = catSelect.value;
+    const formato = document.getElementById("formato").value;
+    const isbn = document.getElementById("isbn").value.trim();
+    const archivoDigital = document.getElementById("archivoDigital").value.trim();
+    const addMsg = document.getElementById("addMsg");
+
+    if (!titulo) {
+      addMsg.textContent = "Falta el título.";
+      addMsg.style.color = "#A32D2D";
+      return;
+    }
+    if (formato === "Digital" && !archivoDigital) {
+      addMsg.textContent = "Es Digital pero no pegaste el enlace del archivo. Puedes agregarlo ahora o después.";
+      addMsg.style.color = "#B8860B";
+    }
+
+    addMsg.textContent = addMsg.textContent && formato === "Digital" && !archivoDigital ? addMsg.textContent : "Guardando en la hoja de Google...";
+    if (!(formato === "Digital" && !archivoDigital)) addMsg.style.color = "#6B6459";
+    const today = new Date().toISOString().slice(0, 10);
+
+    try {
+      const res = await apiPost({
+        action: "add", titulo, autor, editorial, anio, idioma, categoria, formato, isbn, fecha: today, archivoDigital,
+        password: document.getElementById("adminPass").value
+      });
+      if (res.success) {
+        addMsg.textContent = "Agregado como " + res.code + ".";
+        addMsg.style.color = "#3B6D11";
+        document.getElementById("titulo").value = "";
+        document.getElementById("autor").value = "";
+        document.getElementById("editorial").value = "";
+        document.getElementById("anio").value = "";
+        document.getElementById("idioma").value = "Español";
+        document.getElementById("isbn").value = "";
+        document.getElementById("archivoDigital").value = "";
+        document.getElementById("lookupMsg").textContent = "";
+        await loadBooks();
+      } else {
+        addMsg.textContent = "Error al guardar: " + (res.error || "desconocido");
+        addMsg.style.color = "#A32D2D";
+      }
+    } catch (e) {
+      addMsg.textContent = "No se pudo conectar con la hoja de Google. Intenta de nuevo.";
+      addMsg.style.color = "#A32D2D";
+    }
+  });
+
+  document.getElementById("filtro").addEventListener("input", render);
+  document.getElementById("btnRefrescar").addEventListener("click", loadBooks);
+
+  document.getElementById("btnExport").addEventListener("click", () => {
+    const headers = ["Código", "Título", "Autor", "Editorial", "Año", "Idioma", "Categoría", "Formato", "Estado", "Fecha", "Prestado a", "ISBN", "Archivo Digital"];
+    const rows = books.map(b => [
+      b.code, b.titulo, b.autor, b.editorial, b.anio, b.idioma,
+      (CATEGORIES.find(c => c.code === b.categoria) || {}).label || b.categoria,
+      b.formato, b.estado, b.fecha, b.prestadoA, b.isbn, b.archivoDigital
+    ]);
+    const csv = [headers].concat(rows).map(r =>
+      r.map(v => '"' + String(v || "").replace(/"/g, '""') + '"').join(",")
+    ).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "catalogo_biblioteca.csv";
+    link.click();
+  });
+
+  async function toggleEstado(code) {
+    const book = books.find(b => b.code === code);
+    if (!book) return;
+    let nuevoEstado, prestadoA;
+    if (book.estado === "Disponible") {
+      const nombre = prompt("¿A nombre de quién se presta \"" + book.titulo + "\"?");
+      if (!nombre) return;
+      nuevoEstado = "Prestado";
+      prestadoA = nombre;
+    } else {
+      nuevoEstado = "Disponible";
+      prestadoA = "";
+    }
+    setStatus("Actualizando...");
+    try {
+      const res = await apiPost({ action: "toggleEstado", code, estado: nuevoEstado, prestadoA, password: document.getElementById("adminPass").value });
+      if (!res.success) { setStatus(res.error || "No autorizado.", true); return; }
+      await loadBooks();
+    } catch (e) {
+      setStatus("No se pudo actualizar. Intenta de nuevo.", true);
+    }
+  }
+
+  async function deleteBook(code) {
+    const book = books.find(b => b.code === code);
+    if (!book) return;
+    if (!confirm("¿Eliminar \"" + book.titulo + "\" del catálogo?")) return;
+    setStatus("Eliminando...");
+    try {
+      const res = await apiPost({ action: "delete", code, password: document.getElementById("adminPass").value });
+      if (!res.success) { setStatus(res.error || "No autorizado.", true); return; }
+      await loadBooks();
+    } catch (e) {
+      setStatus("No se pudo eliminar. Intenta de nuevo.", true);
+    }
+  }
+
+  function render() {
+    const filtro = (document.getElementById("filtro").value || "").toLowerCase();
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+    const filtered = books.filter(b =>
+      !filtro || ((b.titulo || "") + " " + (b.autor || "") + " " + (b.code || "")).toLowerCase().indexOf(filtro) !== -1
+    );
+
+    document.getElementById("emptyMsg").style.display = books.length === 0 ? "block" : "none";
+    document.getElementById("tableWrap").style.display = books.length === 0 ? "none" : "block";
+
+    filtered.forEach((b) => {
+      const tr = document.createElement("tr");
+      tr.style.borderTop = "1px solid #EFE9DA";
+      const catLabel = (CATEGORIES.find(c => c.code === b.categoria) || {}).label || b.categoria;
+      const estadoColor = b.estado === "Disponible" ? "#3B6D11" : "#A32D2D";
+      let formatoCell;
+      if (b.formato === "Digital" && b.archivoDigital) {
+        formatoCell = '<a href="' + escapeHtml(b.archivoDigital) + '" target="_blank" rel="noopener" style="color:#7A2E2E; font-weight:600; text-decoration:underline;">Digital ⬇</a>';
+      } else if (b.formato === "Digital") {
+        formatoCell = '<span style="color:#A39B87;" title="Sin enlace cargado todavía">Digital (sin enlace)</span>';
+      } else {
+        formatoCell = escapeHtml(b.formato);
+      }
+      tr.innerHTML =
+        '<td style="padding: 7px 10px; font-weight: 600;">' + escapeHtml(b.code) + '</td>' +
+        '<td style="padding: 7px 10px;">' + escapeHtml(b.titulo) + '</td>' +
+        '<td style="padding: 7px 10px;">' + escapeHtml(b.autor) + '</td>' +
+        '<td style="padding: 7px 10px;">' + escapeHtml(catLabel) + '</td>' +
+        '<td style="padding: 7px 10px;">' + escapeHtml(b.idioma || "") + '</td>' +
+        '<td style="padding: 7px 10px;">' + formatoCell + '</td>' +
+        '<td style="padding: 7px 10px;"><span style="color:' + estadoColor + '; cursor:pointer;" data-toggle="' + escapeHtml(b.code) + '">' + escapeHtml(b.estado) + (b.prestadoA ? " (" + escapeHtml(b.prestadoA) + ")" : "") + '</span></td>' +
+        '<td style="padding: 7px 10px; text-align: right;"><span style="cursor:pointer; color:#A39B87;" data-delete="' + escapeHtml(b.code) + '">eliminar</span></td>';
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("[data-toggle]").forEach(el => {
+      el.addEventListener("click", () => toggleEstado(el.getAttribute("data-toggle")));
+    });
+    tbody.querySelectorAll("[data-delete]").forEach(el => {
+      el.addEventListener("click", () => deleteBook(el.getAttribute("data-delete")));
+    });
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s || "";
+    return d.innerHTML;
+  }
+
+  loadBooks();
+})();
+</script>
+</body>
+</html>
