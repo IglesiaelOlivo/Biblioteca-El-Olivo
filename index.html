@@ -3,42 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biblioteca de la Iglesia — Consulta</title>
+<title>Biblioteca El Olivo</title>
+<style>
+  /* ============================================================
+     COLORES Y TIPOGRAFÍA — cambia aquí y todo el sitio se actualiza
+     ============================================================ */
+  :root {
+    --color-fondo:        #F4F6F0;  /* fondo de la página */
+    --color-superficie:   #FFFFFF;  /* tarjetas y paneles */
+    --color-texto:        #1F2A22;  /* texto principal */
+    --color-texto-suave:  #5C6B60;  /* texto secundario */
+    --color-borde:        #DCE3D8;  /* líneas y bordes */
+    --color-principal:    #3F5B3A;  /* verde olivo: botones y acentos */
+    --color-principal-osc:#2E4429;  /* hover del color principal */
+    --color-acento:       #B9893B;  /* dorado: etiquetas pequeñas */
+    --color-digital:      #2F6F8F;  /* azul: libros digitales */
+    --color-fisico:       #7A5230;  /* café: libros físicos */
+    --color-ok:           #2F7D3B;  /* disponible */
+    --color-no:           #A13A2E;  /* prestado / error */
+    --fuente-titulos: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --fuente-texto: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --radio: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: var(--fuente-texto);
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  /* Encabezado */
+  .hero {
+    background: var(--color-principal);
+    color: #fff;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 20px;
+  }
+  .hero .sello { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; margin: 0 0 6px; }
+  .hero h1 { font-family: var(--fuente-titulos); font-size: 30px; margin: 0 0 6px; font-weight: 700; }
+  .hero p { margin: 0; opacity: .9; font-size: 15px; max-width: 560px; }
+
+  /* Panel de búsqueda y filtros */
+  .panel {
+    background: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .buscar {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--color-borde);
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--color-fondo);
+  }
+  .buscar:focus, select:focus, button:focus-visible { outline: 2px solid var(--color-principal); outline-offset: 1px; }
+
+  .fila { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; }
+  .pildoras { display: inline-flex; border: 1px solid var(--color-borde); border-radius: 999px; overflow: hidden; background: var(--color-fondo); }
+  .pildora {
+    border: none; background: transparent; padding: 8px 16px; font-size: 14px; cursor: pointer;
+    font-family: inherit; color: var(--color-texto-suave);
+  }
+  .pildora.activa { background: var(--color-principal); color: #fff; font-weight: 600; }
+  select {
+    padding: 9px 12px; border: 1px solid var(--color-borde); border-radius: 10px; font-size: 14px;
+    font-family: inherit; background: var(--color-superficie); color: var(--color-texto); max-width: 100%;
+  }
+  .campo { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-texto-suave); }
+  .check { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--color-texto); }
+  .limpiar { margin-left: auto; background: none; border: none; color: var(--color-principal); font-size: 13px; cursor: pointer; text-decoration: underline; font-family: inherit; }
+
+  .estado { font-size: 13px; color: var(--color-texto-suave); margin: 4px 2px 12px; min-height: 18px; }
+  .estado.error { color: var(--color-no); }
+
+  /* Tarjetas */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .tarjeta {
+    background: var(--color-superficie);
+    border: 1px solid var(--color-borde);
+    border-left: 5px solid var(--color-fisico);
+    border-radius: var(--radio);
+    padding: 16px;
+    display: flex; flex-direction: column;
+  }
+  .tarjeta.digital { border-left-color: var(--color-digital); }
+  .cat { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--color-acento); margin-bottom: 6px; }
+  .titulo { font-family: var(--fuente-titulos); font-size: 17px; font-weight: 700; margin: 0 0 2px; }
+  .autor { font-size: 14px; color: var(--color-texto-suave); margin-bottom: 10px; }
+  .meta { font-size: 12.5px; color: var(--color-texto-suave); margin-bottom: 10px; }
+  .meta span + span::before { content: " · "; }
+  .etiquetas { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-bottom: 12px; }
+  .etq { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #EEF1EB; color: var(--color-texto-suave); }
+  .etq.digital { background: #E3EFF5; color: var(--color-digital); }
+  .etq.fisico { background: #F3EBE3; color: var(--color-fisico); }
+  .etq.ok { background: #E4F1E6; color: var(--color-ok); }
+  .etq.no { background: #F6E5E2; color: var(--color-no); }
+  .accion {
+    display: block; width: 100%; text-align: center; text-decoration: none; border: none; cursor: pointer;
+    padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit;
+    background: var(--color-principal); color: #fff;
+  }
+  .accion:hover { background: var(--color-principal-osc); }
+  .accion.digital { background: var(--color-digital); }
+  .nota { text-align: center; font-size: 13px; color: var(--color-texto-suave); padding: 10px 0 2px; }
+  .vacio { text-align: center; color: var(--color-texto-suave); padding: 40px 10px; display: none; }
+
+  /* Ventana de reserva */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(31,42,34,.55); align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .modal .caja { background: #fff; border-radius: 14px; padding: 22px; max-width: 400px; width: 100%; }
+  .modal h3 { font-family: var(--fuente-titulos); font-size: 18px; margin: 0 0 14px; }
+  .modal label { font-size: 12px; color: var(--color-texto-suave); display: block; margin-bottom: 3px; }
+  .modal input { width: 100%; padding: 10px; border: 1px solid var(--color-borde); border-radius: 8px; font-size: 14px; margin-bottom: 12px; font-family: inherit; }
+  .modal .botones { display: flex; gap: 8px; }
+  .modal .botones button { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .btn-sec { background: #fff; border: 1px solid var(--color-borde); }
+  .btn-pri { background: var(--color-principal); color: #fff; border: none; }
+  #reservaMsg { font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+
+  @media (max-width: 520px) {
+    .hero h1 { font-size: 24px; }
+    .limpiar { margin-left: 0; }
+  }
+</style>
 </head>
-<body style="margin:0; padding:20px; background:#FAF7F0;">
-<div id="app" style="max-width: 900px; margin: 0 auto; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: #22303F;">
+<body>
+<div class="wrap">
 
-  <div style="text-align:center; margin-bottom: 20px;">
-    <h1 style="font-family: Georgia, 'Iowan Old Style', serif; font-size: 24px; margin: 0 0 4px; color: #22303F;">Biblioteca de la Iglesia</h1>
-    <p style="font-size: 13px; color: #6B6459; margin: 0;">Consulta los libros disponibles. Si quieres uno físico, puedes reservarlo.</p>
-  </div>
+  <header class="hero">
+    <p class="sello">Iglesia El Olivo · Sólo en Jesús</p>
+    <h1>Biblioteca</h1>
+    <p>Busca entre nuestros libros. Los digitales se pueden descargar y los físicos se pueden reservar.</p>
+  </header>
 
-  <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-    <input id="filtro" type="text" placeholder="Buscar por título, autor o código..." style="flex: 1; padding: 10px 12px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;" />
-    <select id="catFiltro" style="padding: 10px 12px; border: 1px solid #D6CDB6; border-radius: 6px; font-size: 14px;">
-      <option value="">Todas las categorías</option>
-    </select>
-  </div>
+  <section class="panel" aria-label="Búsqueda y filtros">
+    <input id="filtro" class="buscar" type="search" placeholder="Buscar por título, autor, editorial o código…" />
 
-  <div id="statusMsg" style="font-size: 12px; color: #6B6459; margin-bottom: 14px; text-align:center;"></div>
+    <div class="fila">
+      <div class="pildoras" role="group" aria-label="Formato">
+        <button class="pildora activa" data-formato="">Todos</button>
+        <button class="pildora" data-formato="Físico">Físicos</button>
+        <button class="pildora" data-formato="Digital">Digitales</button>
+      </div>
 
-  <div id="cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;"></div>
-  <p id="emptyMsg" style="font-size: 13px; color: #6B6459; text-align: center; padding: 30px; display: none;">No se encontraron libros con esa búsqueda.</p>
+      <select id="catFiltro" aria-label="Categoría">
+        <option value="">Todas las categorías</option>
+      </select>
+
+      <label class="campo">Ordenar por
+        <select id="orden" aria-label="Ordenar por">
+          <option value="recientes">Recién agregados</option>
+          <option value="titulo">Título (A–Z)</option>
+          <option value="autor">Autor (A–Z)</option>
+          <option value="anioDesc">Año: más nuevos primero</option>
+          <option value="anioAsc">Año: más antiguos primero</option>
+          <option value="editorial">Editorial (A–Z)</option>
+        </select>
+      </label>
+
+      <label class="check"><input type="checkbox" id="soloDisp" /> Solo disponibles</label>
+      <button id="btnLimpiar" class="limpiar" type="button">Limpiar filtros</button>
+    </div>
+  </section>
+
+  <div id="estado" class="estado"></div>
+  <div id="cards" class="grid"></div>
+  <p id="vacio" class="vacio">No se encontraron libros con esos filtros.</p>
 </div>
 
-<div id="reservaModal" style="display:none; position:fixed; inset:0; background:rgba(34,48,63,0.55); align-items:center; justify-content:center; padding:16px; z-index:50;">
-  <div style="background:white; border-radius:10px; padding:22px; max-width:380px; width:100%;">
-    <h3 id="reservaTitulo" style="font-family: Georgia, serif; font-size:17px; margin:0 0 12px;"></h3>
-    <label style="font-size:12px; color:#6B6459; display:block; margin-bottom:3px;">Tu nombre</label>
-    <input id="reservaNombre" type="text" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #D6CDB6; border-radius:6px; font-size:14px; margin-bottom:10px;" />
-    <label style="font-size:12px; color:#6B6459; display:block; margin-bottom:3px;">Teléfono</label>
-    <input id="reservaContacto" type="tel" placeholder="Ej. 8888-8888" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #D6CDB6; border-radius:6px; font-size:14px; margin-bottom:10px;" />
-    <label style="font-size:12px; color:#6B6459; display:block; margin-bottom:3px;">Nota (opcional)</label>
-    <input id="reservaNotas" type="text" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #D6CDB6; border-radius:6px; font-size:14px; margin-bottom:14px;" />
-    <div id="reservaMsg" style="font-size:13px; min-height:16px; margin-bottom:8px;"></div>
-    <div style="display:flex; gap:8px;">
-      <button id="btnCancelarReserva" style="flex:1; background:white; border:1px solid #D6CDB6; border-radius:6px; padding:9px; font-size:14px; cursor:pointer;">Cancelar</button>
-      <button id="btnConfirmarReserva" style="flex:1; background:#7A2E2E; color:white; border:none; border-radius:6px; padding:9px; font-size:14px; cursor:pointer;">Reservar</button>
+<div id="reservaModal" class="modal">
+  <div class="caja">
+    <h3 id="reservaTitulo"></h3>
+    <label for="reservaNombre">Tu nombre</label>
+    <input id="reservaNombre" type="text" />
+    <label for="reservaContacto">Teléfono</label>
+    <input id="reservaContacto" type="tel" placeholder="Ej. 8888-8888" />
+    <label for="reservaNotas">Nota (opcional)</label>
+    <input id="reservaNotas" type="text" />
+    <div id="reservaMsg"></div>
+    <div class="botones">
+      <button id="btnCancelarReserva" class="btn-sec" type="button">Cancelar</button>
+      <button id="btnConfirmarReserva" class="btn-pri" type="button">Reservar</button>
     </div>
   </div>
 </div>
@@ -63,7 +216,8 @@
     { code: "GEN", label: "General" }
   ];
 
-  const catFiltro = document.getElementById("catFiltro");
+  const $ = id => document.getElementById(id);
+  const catFiltro = $("catFiltro");
   CATEGORIES.forEach(c => {
     const opt = document.createElement("option");
     opt.value = c.code;
@@ -72,109 +226,186 @@
   });
 
   let books = [];
-  let reservaCode = null;
-  let reservaTitulo = null;
-
-  function setStatus(msg, isError) {
-    const el = document.getElementById("statusMsg");
-    el.textContent = msg;
-    el.style.color = isError ? "#A32D2D" : "#6B6459";
-  }
-
-  async function loadBooks() {
-    setStatus("Cargando catálogo...");
-    try {
-      const resp = await fetch(API_URL);
-      const data = await resp.json();
-      books = data.books || [];
-      setStatus("");
-      render();
-    } catch (e) {
-      setStatus("No se pudo cargar el catálogo. Intenta de nuevo en un momento.", true);
-    }
-  }
+  let formatoSel = "";
+  let reservaCode = null, reservaTitulo = null;
 
   function escapeHtml(s) {
     const d = document.createElement("div");
-    d.textContent = s || "";
+    d.textContent = s == null ? "" : String(s);
     return d.innerHTML;
   }
 
-  function render() {
-    const filtro = (document.getElementById("filtro").value || "").toLowerCase();
-    const catSel = catFiltro.value;
-    const cards = document.getElementById("cards");
-    cards.innerHTML = "";
+  function setEstado(msg, isError) {
+    const el = $("estado");
+    el.textContent = msg;
+    el.className = "estado" + (isError ? " error" : "");
+  }
 
-    const filtered = books.filter(b => {
-      const matchesText = !filtro || ((b.titulo || "") + " " + (b.autor || "") + " " + (b.code || "")).toLowerCase().indexOf(filtro) !== -1;
-      const matchesCat = !catSel || b.categoria === catSel;
-      return matchesText && matchesCat;
+  async function loadBooks() {
+    setEstado("Cargando biblioteca…");
+    try {
+      const resp = await fetch(API_URL);
+      const data = await resp.json();
+      // "pos" guarda el orden en que se ingresaron los libros (para "Recién agregados")
+      books = (data.books || []).map((b, i) => Object.assign({}, b, { pos: i }));
+      setEstado("");
+      render();
+    } catch (e) {
+      setEstado("No se pudo cargar la biblioteca. Intenta de nuevo en un momento.", true);
+    }
+  }
+
+  // Comparación en español, sin distinguir tildes ni mayúsculas; vacíos siempre al final
+  const coll = new Intl.Collator("es", { sensitivity: "base", numeric: true });
+  function cmpTexto(a, b) {
+    const x = (a || "").toString().trim(), y = (b || "").toString().trim();
+    if (!x && !y) return 0;
+    if (!x) return 1;
+    if (!y) return -1;
+    return coll.compare(x, y);
+  }
+  function anioNum(b) {
+    const n = parseInt(b.anio, 10);
+    return isNaN(n) ? null : n;
+  }
+  function cmpAnio(a, b, desc) {
+    const x = anioNum(a), y = anioNum(b);
+    if (x === null && y === null) return 0;
+    if (x === null) return 1;
+    if (y === null) return -1;
+    return desc ? y - x : x - y;
+  }
+
+  function sortBooks(list, modo) {
+    const arr = list.slice();
+    const porTitulo = (a, b) => cmpTexto(a.titulo, b.titulo);
+    arr.sort((a, b) => {
+      let r = 0;
+      if (modo === "titulo") r = porTitulo(a, b);
+      else if (modo === "autor") r = cmpTexto(a.autor, b.autor) || porTitulo(a, b);
+      else if (modo === "editorial") r = cmpTexto(a.editorial, b.editorial) || porTitulo(a, b);
+      else if (modo === "anioDesc") r = cmpAnio(a, b, true) || porTitulo(a, b);
+      else if (modo === "anioAsc") r = cmpAnio(a, b, false) || porTitulo(a, b);
+      else r = b.pos - a.pos; // recientes: los últimos ingresados primero
+      return r;
     });
+    return arr;
+  }
 
-    document.getElementById("emptyMsg").style.display = filtered.length === 0 ? "block" : "none";
+  function filterBooks() {
+    const q = ($("filtro").value || "").toLowerCase().trim();
+    const cat = catFiltro.value;
+    const soloDisp = $("soloDisp").checked;
+    return books.filter(b => {
+      if (formatoSel && b.formato !== formatoSel) return false;
+      if (cat && b.categoria !== cat) return false;
+      if (soloDisp && b.estado !== "Disponible") return false;
+      if (q) {
+        const texto = [b.titulo, b.autor, b.editorial, b.code].join(" ").toLowerCase();
+        if (texto.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+  }
 
-    filtered.forEach(b => {
-      const catLabel = (CATEGORIES.find(c => c.code === b.categoria) || {}).label || b.categoria;
+  function render() {
+    const lista = sortBooks(filterBooks(), $("orden").value);
+    const cont = $("cards");
+    cont.innerHTML = "";
+    $("vacio").style.display = (books.length && !lista.length) ? "block" : "none";
+    if (books.length) {
+      setEstado(lista.length + (lista.length === 1 ? " libro" : " libros") + (lista.length === books.length ? "" : " de " + books.length));
+    }
+
+    lista.forEach(b => {
+      const catLabel = (CATEGORIES.find(c => c.code === b.categoria) || {}).label || b.categoria || "";
       const disponible = b.estado === "Disponible";
-      const estadoColor = disponible ? "#3B6D11" : "#A32D2D";
+      const esDigital = b.formato === "Digital";
 
-      let actionHtml = "";
-      if (b.formato === "Digital" && b.archivoDigital) {
-        actionHtml = '<a href="' + escapeHtml(b.archivoDigital) + '" target="_blank" rel="noopener" style="display:block; text-align:center; background:#22303F; color:white; text-decoration:none; padding:9px; border-radius:6px; font-size:13px; margin-top:10px;">Descargar</a>';
-      } else if (b.formato === "Digital") {
-        actionHtml = '<div style="text-align:center; color:#A39B87; font-size:12px; margin-top:10px;">Archivo aún no disponible en línea</div>';
-      } else if (b.formato === "Físico" && disponible) {
-        actionHtml = '<button data-reservar="' + escapeHtml(b.code) + '" data-titulo="' + escapeHtml(b.titulo) + '" style="display:block; width:100%; background:#7A2E2E; color:white; border:none; padding:9px; border-radius:6px; font-size:13px; margin-top:10px; cursor:pointer;">Reservar</button>';
+      let accion;
+      if (esDigital && b.archivoDigital) {
+        accion = '<a class="accion digital" href="' + escapeHtml(b.archivoDigital) + '" target="_blank" rel="noopener">Descargar</a>';
+      } else if (esDigital) {
+        accion = '<div class="nota">Archivo aún no disponible en línea</div>';
+      } else if (disponible) {
+        accion = '<button class="accion" type="button" data-reservar="' + escapeHtml(b.code) + '" data-titulo="' + escapeHtml(b.titulo) + '">Reservar</button>';
       } else {
-        actionHtml = '<div style="text-align:center; color:#A39B87; font-size:12px; margin-top:10px;">No disponible en este momento</div>';
+        accion = '<div class="nota">No disponible en este momento</div>';
       }
 
-      const card = document.createElement("div");
-      card.style.cssText = "background:white; border:1px solid #E4DCC9; border-radius:10px; padding:16px;";
+      const metaPartes = [];
+      if (b.editorial) metaPartes.push("<span>" + escapeHtml(b.editorial) + "</span>");
+      if (b.anio) metaPartes.push("<span>" + escapeHtml(b.anio) + "</span>");
+      if (b.idioma) metaPartes.push("<span>" + escapeHtml(b.idioma) + "</span>");
+
+      const card = document.createElement("article");
+      card.className = "tarjeta" + (esDigital ? " digital" : "");
       card.innerHTML =
-        '<div style="font-size:11px; color:#B08D57; font-weight:600; letter-spacing:0.03em; margin-bottom:4px;">' + escapeHtml(catLabel).toUpperCase() + '</div>' +
-        '<div style="font-family: Georgia, serif; font-size:15px; font-weight:700; margin-bottom:2px;">' + escapeHtml(b.titulo) + '</div>' +
-        '<div style="font-size:13px; color:#6B6459; margin-bottom:8px;">' + escapeHtml(b.autor) + '</div>' +
-        '<div style="font-size:12px; color:#6B6459;">' + escapeHtml(b.formato) + (b.idioma ? " · " + escapeHtml(b.idioma) : "") + '</div>' +
-        '<div style="font-size:12px; color:' + estadoColor + '; font-weight:600; margin-top:4px;">' + escapeHtml(b.estado) + '</div>' +
-        actionHtml;
-      cards.appendChild(card);
+        '<div class="cat">' + escapeHtml(catLabel) + '</div>' +
+        '<h2 class="titulo">' + escapeHtml(b.titulo) + '</h2>' +
+        '<div class="autor">' + (escapeHtml(b.autor) || "Autor no indicado") + '</div>' +
+        '<div class="meta">' + metaPartes.join("") + '</div>' +
+        '<div class="etiquetas">' +
+          '<span class="etq ' + (esDigital ? "digital" : "fisico") + '">' + escapeHtml(b.formato) + '</span>' +
+          (esDigital ? "" : '<span class="etq ' + (disponible ? "ok" : "no") + '">' + escapeHtml(b.estado || "") + '</span>') +
+        '</div>' + accion;
+      cont.appendChild(card);
     });
 
-    cards.querySelectorAll("[data-reservar]").forEach(btn => {
+    cont.querySelectorAll("[data-reservar]").forEach(btn => {
       btn.addEventListener("click", () => openReserva(btn.getAttribute("data-reservar"), btn.getAttribute("data-titulo")));
     });
   }
 
+  // Filtros
+  document.querySelectorAll(".pildora").forEach(p => {
+    p.addEventListener("click", () => {
+      document.querySelectorAll(".pildora").forEach(x => x.classList.remove("activa"));
+      p.classList.add("activa");
+      formatoSel = p.getAttribute("data-formato");
+      render();
+    });
+  });
+  $("filtro").addEventListener("input", render);
+  catFiltro.addEventListener("change", render);
+  $("orden").addEventListener("change", render);
+  $("soloDisp").addEventListener("change", render);
+  $("btnLimpiar").addEventListener("click", () => {
+    $("filtro").value = "";
+    catFiltro.value = "";
+    $("orden").value = "recientes";
+    $("soloDisp").checked = false;
+    formatoSel = "";
+    document.querySelectorAll(".pildora").forEach(x => x.classList.remove("activa"));
+    document.querySelector('.pildora[data-formato=""]').classList.add("activa");
+    render();
+  });
+
+  // Reservas
   function openReserva(code, titulo) {
     reservaCode = code;
     reservaTitulo = titulo;
-    document.getElementById("reservaTitulo").textContent = "Reservar: " + titulo;
-    document.getElementById("reservaNombre").value = "";
-    document.getElementById("reservaContacto").value = "";
-    document.getElementById("reservaNotas").value = "";
-    document.getElementById("reservaMsg").textContent = "";
-    document.getElementById("reservaModal").style.display = "flex";
+    $("reservaTitulo").textContent = "Reservar: " + titulo;
+    $("reservaNombre").value = "";
+    $("reservaContacto").value = "";
+    $("reservaNotas").value = "";
+    $("reservaMsg").textContent = "";
+    $("reservaModal").style.display = "flex";
   }
+  $("btnCancelarReserva").addEventListener("click", () => { $("reservaModal").style.display = "none"; });
 
-  document.getElementById("btnCancelarReserva").addEventListener("click", () => {
-    document.getElementById("reservaModal").style.display = "none";
-  });
-
-  document.getElementById("btnConfirmarReserva").addEventListener("click", async () => {
-    const nombre = document.getElementById("reservaNombre").value.trim();
-    const contacto = document.getElementById("reservaContacto").value.trim();
-    const notas = document.getElementById("reservaNotas").value.trim();
-    const msg = document.getElementById("reservaMsg");
-
+  $("btnConfirmarReserva").addEventListener("click", async () => {
+    const nombre = $("reservaNombre").value.trim();
+    const contacto = $("reservaContacto").value.trim();
+    const notas = $("reservaNotas").value.trim();
+    const msg = $("reservaMsg");
     if (!nombre || !contacto) {
       msg.textContent = "Por favor completa tu nombre y teléfono.";
-      msg.style.color = "#A32D2D";
+      msg.style.color = "var(--color-no)";
       return;
     }
-    msg.textContent = "Enviando...";
-    msg.style.color = "#6B6459";
+    msg.textContent = "Enviando…";
+    msg.style.color = "var(--color-texto-suave)";
     try {
       const resp = await fetch(API_URL, {
         method: "POST",
@@ -184,20 +415,17 @@
       const data = await resp.json();
       if (data.success) {
         msg.textContent = "¡Listo! Te avisarán pronto.";
-        msg.style.color = "#3B6D11";
-        setTimeout(() => { document.getElementById("reservaModal").style.display = "none"; }, 1400);
+        msg.style.color = "var(--color-ok)";
+        setTimeout(() => { $("reservaModal").style.display = "none"; }, 1400);
       } else {
         msg.textContent = "No se pudo enviar la reserva. Intenta de nuevo.";
-        msg.style.color = "#A32D2D";
+        msg.style.color = "var(--color-no)";
       }
     } catch (e) {
       msg.textContent = "No se pudo enviar. Revisa tu conexión.";
-      msg.style.color = "#A32D2D";
+      msg.style.color = "var(--color-no)";
     }
   });
-
-  document.getElementById("filtro").addEventListener("input", render);
-  catFiltro.addEventListener("change", render);
 
   loadBooks();
 })();
