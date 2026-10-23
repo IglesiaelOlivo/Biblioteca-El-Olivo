@@ -107,6 +107,7 @@
   .etq.fisico { background: #F3EBE3; color: var(--color-fisico); }
   .etq.ok { background: #E4F1E6; color: var(--color-ok); }
   .etq.no { background: #F6E5E2; color: var(--color-no); }
+  .etq.res { background: #FBF1DC; color: #8A6A1E; }
   .accion {
     display: block; width: 100%; text-align: center; text-decoration: none; border: none; cursor: pointer;
     padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit;
@@ -128,6 +129,12 @@
   .btn-sec { background: #fff; border: 1px solid var(--color-borde); }
   .btn-pri { background: var(--color-principal); color: #fff; border: none; }
   #reservaMsg { font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  .condiciones { background: var(--color-fondo); border: 1px solid var(--color-borde); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; font-size: 13px; color: var(--color-texto); }
+  .condiciones strong { display: block; margin-bottom: 6px; font-size: 13px; }
+  .condiciones ul { margin: 0; padding-left: 18px; }
+  .condiciones li { margin-bottom: 4px; }
+  .acepto { display: flex !important; align-items: flex-start; gap: 8px; font-size: 13px !important; color: var(--color-texto) !important; margin-bottom: 12px !important; cursor: pointer; }
+  .modal .acepto input { width: auto; margin: 3px 0 0; }
 
   @media (max-width: 520px) {
     .hero h1 { font-size: 24px; }
@@ -188,6 +195,11 @@
     <input id="reservaContacto" type="tel" placeholder="Ej. 8888-8888" />
     <label for="reservaNotas">Nota (opcional)</label>
     <input id="reservaNotas" type="text" />
+    <div class="condiciones">
+      <strong>Condiciones del préstamo</strong>
+      <ul id="listaCondiciones"></ul>
+    </div>
+    <label class="acepto"><input type="checkbox" id="reservaAcepto" /> He leído y acepto estas condiciones</label>
     <div id="reservaMsg"></div>
     <div class="botones">
       <button id="btnCancelarReserva" class="btn-sec" type="button">Cancelar</button>
@@ -216,7 +228,21 @@
     { code: "GEN", label: "General" }
   ];
 
+  // Plazos que se muestran en las condiciones (deben coincidir con LOAN_DAYS y HOLD_DAYS del Apps Script)
+  const DIAS_RETIRO = 3;
+  const DIAS_PRESTAMO = 30;
+
   const $ = id => document.getElementById(id);
+  const CONDICIONES = [
+    "Al reservar, el libro se te guarda " + DIAS_RETIRO + " días para que pases a retirarlo. Pasado ese plazo, la reserva se cancela.",
+    "El préstamo es por " + DIAS_PRESTAMO + " días.",
+    "Si el libro se devuelve dañado o se pierde, debes reponerlo o pagar su valor."
+  ];
+  CONDICIONES.forEach(t => {
+    const li = document.createElement("li");
+    li.textContent = t;
+    $("listaCondiciones").appendChild(li);
+  });
   const catFiltro = $("catFiltro");
   CATEGORIES.forEach(c => {
     const opt = document.createElement("option");
@@ -347,7 +373,7 @@
         '<div class="meta">' + metaPartes.join("") + '</div>' +
         '<div class="etiquetas">' +
           '<span class="etq ' + (esDigital ? "digital" : "fisico") + '">' + escapeHtml(b.formato) + '</span>' +
-          (esDigital ? "" : '<span class="etq ' + (disponible ? "ok" : "no") + '">' + escapeHtml(b.estado || "") + '</span>') +
+          (esDigital ? "" : '<span class="etq ' + (disponible ? "ok" : (b.estado === "Reservado" ? "res" : "no")) + '">' + escapeHtml(b.estado || "") + '</span>') +
         '</div>' + accion;
       cont.appendChild(card);
     });
@@ -389,7 +415,9 @@
     $("reservaNombre").value = "";
     $("reservaContacto").value = "";
     $("reservaNotas").value = "";
+    $("reservaAcepto").checked = false;
     $("reservaMsg").textContent = "";
+    $("btnConfirmarReserva").disabled = false;
     $("reservaModal").style.display = "flex";
   }
   $("btnCancelarReserva").addEventListener("click", () => { $("reservaModal").style.display = "none"; });
@@ -404,26 +432,41 @@
       msg.style.color = "var(--color-no)";
       return;
     }
+    if (contacto.replace(/\D/g, "").length < 8) {
+      msg.textContent = "Escribe un número de teléfono válido.";
+      msg.style.color = "var(--color-no)";
+      return;
+    }
+    if (!$("reservaAcepto").checked) {
+      msg.textContent = "Para reservar debes aceptar las condiciones del préstamo.";
+      msg.style.color = "var(--color-no)";
+      return;
+    }
     msg.textContent = "Enviando…";
     msg.style.color = "var(--color-texto-suave)";
+    $("btnConfirmarReserva").disabled = true;   // evita enviar dos veces
     try {
       const resp = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "reservar", code: reservaCode, titulo: reservaTitulo, nombre, contacto, notas })
+        body: JSON.stringify({ action: "reservar", code: reservaCode, nombre, contacto, notas })
       });
       const data = await resp.json();
       if (data.success) {
-        msg.textContent = "¡Listo! Te avisarán pronto.";
+        msg.textContent = "¡Listo! Tu reserva quedó registrada. Te contactaremos por teléfono.";
         msg.style.color = "var(--color-ok)";
-        setTimeout(() => { $("reservaModal").style.display = "none"; }, 1400);
+        loadBooks();
+        setTimeout(() => { $("reservaModal").style.display = "none"; }, 2200);
       } else {
-        msg.textContent = "No se pudo enviar la reserva. Intenta de nuevo.";
+        msg.textContent = data.error || "No se pudo enviar la reserva. Intenta de nuevo.";
         msg.style.color = "var(--color-no)";
+        $("btnConfirmarReserva").disabled = false;
+        loadBooks();   // por si el libro ya fue reservado por otra persona
       }
     } catch (e) {
       msg.textContent = "No se pudo enviar. Revisa tu conexión.";
       msg.style.color = "var(--color-no)";
+      $("btnConfirmarReserva").disabled = false;
     }
   });
 
